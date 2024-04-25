@@ -16,7 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from scrumboard.views import LoginView, LogoutView, TodoItemsView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', LoginView.as_view()),
+    path('login/', LoginView.as_view()),
+    path('scrumboard/summary/', TodoItemsView.as_view()),
+    path('scrumboard/summary/<int:pk>/', TodoItemsView.as_view()),
+    path('logout/', LogoutView.as_view()),
 ]
+
