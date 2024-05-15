@@ -3,58 +3,17 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import TodoItem
-from scrumboard_backend.serializers import TodoItemSerializer
+from .models import Contact, Category, Task, CustomUser
+from scrumboard_backend.serializers import (
+    TaskSerializer,
+    CategorySerializer,
+    ContactSerializer,
+    UserListSerializer,
+)
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-
-
-class TodoItemsView(APIView):
-    authentication_classes = [TokenAuthentication] # token must be send every time; activate / deactivate authorization
-    permission_classes = [IsAuthenticated] # token must be send every time; activate / deactivate authorization
-
-    def get(self, request, format=None):
-        # todos = TodoItem.objects.all() # get all todos from all users!
-        todos = TodoItem.objects.filter(author=request.user) # get only todos from user
-        serializer = TodoItemSerializer(todos, many=True)
-        return Response(serializer.data)
-    
-    def post(self, request, format=None):
-        title = request.data.get('title')
-        if title is None:
-            return Response({"error": "Todo is missing"})
-        author = request.user
-        new_todo = TodoItem.objects.create(title=title, author=author)
-        serializer = TodoItemSerializer(new_todo)
-        return Response(serializer.data)
-    
-    def put(self, request, pk, format=None):
-        print('pk:' , pk)
-        try:
-            todo = TodoItem.objects.get(pk=pk, author=request.user)
-        except TodoItem.DoesNotExist:
-            return Response({"error": "TodoItem does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        if todo.author != request.user:
-            return Response({"error": "You are not authorized to update this todo item"}, status=status.HTTP_403_FORBIDDEN)
-        title = request.data.get('title')
-        if title is None:
-            return Response({"error": "Title is missing"}, status=status.HTTP_400_BAD_REQUEST)
-        todo.title = title
-        todo.checked = request.data.get('checked', todo.checked)
-        todo.save()
-        serializer = TodoItemSerializer(todo)
-        return Response(serializer.data)
-    
-    def delete(self, request, pk, format=None):
-        try:
-            todo = TodoItem.objects.get(pk=pk)
-        except TodoItem.DoesNotExist:
-            return Response({"error": "TodoItem does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        if todo.author != request.user:
-            return Response({"error": "You are not authorized to delete this todo item"}, status=status.HTTP_403_FORBIDDEN)
-        todo.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+from django.contrib.auth.models import User
     
 
 class LoginView(ObtainAuthToken):
@@ -89,3 +48,63 @@ class LogoutView(APIView):
         token.delete()
         request.auth.delete()
         return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+    
+    
+class TaskView(APIView):    
+    #Authentication with token
+    # permission only when authentication is successful
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None, format=None):
+        task = Task.objects.all()
+        serializer = TaskSerializer(task, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):        
+        # Check for all required fields
+        required_fields = ['title', 'description', 'due_date', 'category', 'priority', 'assigned_to']
+        missing_fields = [field for field in required_fields if field not in request.data]
+
+        if missing_fields:
+            return Response({"error": f"Missing fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # If all required fields are present, proceed with creating the task
+        try:
+            author = request.user
+            new_task = Task.objects.create(
+                title=request.data['title'],
+                author=author,
+                description=request.data['description'],
+                due_date=request.data['due_date'],
+                category=request.data['category'],
+                priority=request.data['priority'],
+                assigned_to=request.data['assigned_to']
+            )
+            serializer = TaskSerializer(new_task)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class CategoriesView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        categorys = Category.objects.all()
+        serializer = CategorySerializer(categorys, many=True)
+        return Response(serializer.data)
+    
+    
+    
+class UserListView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = CustomUser.objects.all()
+        print('users', users)
+        serializer = UserListSerializer(users, many=True)
+        print('serializer', serializer)
+        return Response(serializer.data)
