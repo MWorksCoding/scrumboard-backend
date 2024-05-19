@@ -16,19 +16,19 @@ class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = '__all__'
-    
-
-class TaskSerializer(serializers.ModelSerializer):
-    assigned_to = ContactSerializer(many=True)
-    category = CategorySerializer()
-
-    class Meta:
-        model = Task
-        fields = '__all__'
-
-
 
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "color", "first_name", "last_name"]
+        fields = ["id", "username", "color", "first_name", "last_name", "email", "phone"]
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    assigned_to = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), many=True)
+    # category = CategorySerializer()
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+
+
+    class Meta:
+        model = Task
+        fields = '__all__'

@@ -14,6 +14,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
     
 
 class LoginView(ObtainAuthToken):
@@ -42,8 +43,6 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        print('self' , self)
-        print('request' , request)
         token = Token.objects.get(user=request.user)
         token.delete()
         request.auth.delete()
@@ -61,30 +60,37 @@ class TaskView(APIView):
         serializer = TaskSerializer(task, many=True)
         return Response(serializer.data)
 
-    def post(self, request, format=None):        
-        # Check for all required fields
-        required_fields = ['title', 'description', 'due_date', 'category', 'priority', 'assigned_to']
-        missing_fields = [field for field in required_fields if field not in request.data]
+    def post(self, request, format=None):    
+        print('self' , self)
+        print('request' , request)
+        print('request.data' , request.data)    
+        author = request.user
+        data = request.data.copy()
+        data['author'] = author.id
+        
+        category_data = data.get('category')
+        if isinstance(category_data, dict):
+            data['category'] = category_data.get('id')
+    
+        serializer = TaskSerializer(data=data)
 
-        if missing_fields:
-            return Response({"error": f"Missing fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
+        if serializer.is_valid():
 
-        # If all required fields are present, proceed with creating the task
-        try:
+
+            assigned_to_id = request.data.get("assigned_to")
+            assigned_to = CustomUser.objects.filter(pk__in=assigned_to_id).all()
+
             author = request.user
-            new_task = Task.objects.create(
-                title=request.data['title'],
-                author=author,
-                description=request.data['description'],
-                due_date=request.data['due_date'],
-                category=request.data['category'],
-                priority=request.data['priority'],
-                assigned_to=request.data['assigned_to']
+
+            task = serializer.save(
+                assigned_to=assigned_to,
+                author=author
             )
-            serializer = TaskSerializer(new_task)
+            print('test3', task)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         
 class CategoriesView(APIView):
