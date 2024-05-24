@@ -31,6 +31,7 @@ class LoginView(ObtainAuthToken):
         return Response({
             'token': token.key,
             'user_id': user.pk,
+            'username': user.username,
             'email': user.email
         },
         status=status.HTTP_200_OK,
@@ -60,37 +61,41 @@ class TaskView(APIView):
         serializer = TaskSerializer(task, many=True)
         return Response(serializer.data)
 
-    def post(self, request, format=None):    
-        print('self' , self)
-        print('request' , request)
-        print('request.data' , request.data)    
+    def post(self, request, format=None):     
         author = request.user
         data = request.data.copy()
         data['author'] = author.id
-        
         category_data = data.get('category')
         if isinstance(category_data, dict):
             data['category'] = category_data.get('id')
-    
         serializer = TaskSerializer(data=data)
-
         if serializer.is_valid():
-
-
             assigned_to_id = request.data.get("assigned_to")
             assigned_to = CustomUser.objects.filter(pk__in=assigned_to_id).all()
-
             author = request.user
-
             task = serializer.save(
                 assigned_to=assigned_to,
                 author=author
             )
-            print('test3', task)
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk, format=None):
+        print('pk:' , pk)
+        try:
+            # Find the task by ID
+            task = Task.objects.get(pk=pk)
+        except Task.DoesNotExist:
+            return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Deserialize the incoming data
+        serializer = TaskSerializer(task, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
         
         
 class CategoriesView(APIView):
