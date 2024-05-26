@@ -118,7 +118,5 @@ class UserListView(APIView):
 
     def get(self, request):
         users = CustomUser.objects.all()
-        print('users', users)
         serializer = UserListSerializer(users, many=True)
-        print('serializer', serializer)
         return Response(serializer.data)
