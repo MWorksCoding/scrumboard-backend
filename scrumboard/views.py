@@ -120,3 +120,74 @@ class UserListView(APIView):
         users = CustomUser.objects.all()
         serializer = UserListSerializer(users, many=True)
         return Response(serializer.data)
+    
+
+class ContactView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None, format=None):
+        if pk:
+            try:
+                contact = Contact.objects.get(pk=pk)
+                serializer = ContactSerializer(contact)
+                return Response(serializer.data)
+            except Contact.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            contacts = Contact.objects.all()
+            serializer = ContactSerializer(contacts, many=True)
+            return Response(serializer.data)
+        
+        
+    def post(self, request, format=None):
+        serializer = ContactSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    def put(self, request, pk, format=None):
+        try:
+            contact = Contact.objects.get(pk=pk)
+        except Contact.DoesNotExist:
+            return Response({'error': 'Contact not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ContactSerializer(contact, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def delete(self, request, pk, format=None):
+        try:
+            contact = Contact.objects.get(pk=pk)
+        except Contact.DoesNotExist:
+            return Response({'error': 'Contact not found'}, status=status.HTTP_404_NOT_FOUND)
+        contact.delete()
+        return Response({'message': 'Contact deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    
+    
+class UserDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, username):
+        try:
+            user = get_object_or_404(CustomUser, username=username)
+            serializer = UserListSerializer(user, many=False)
+            return Response(serializer.data)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND) 
+
+    def put(self, request, username):
+        try:
+            user = get_object_or_404(CustomUser, username=username)
+            serializer = UserListSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
