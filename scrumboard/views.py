@@ -191,3 +191,58 @@ class UserDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class CreateUserView(APIView):
+
+    def post(self, request):
+        first_name = request.data.get("first_name")
+        last_name = request.data.get("last_name")
+        username = request.data.get("username")
+        email = request.data.get("email")
+        phone = request.data.get("phone")
+        color = request.data.get("color")
+        password = request.data.get("password")
+
+        if CustomUser.objects.filter(username=username).exists():
+            return Response(
+                {"message": "This username already exists"},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if CustomUser.objects.filter(email=email).exists():
+            return Response(
+                {"message": "This email already exists"},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        user = CustomUser.objects.create_user(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            color=color,
+            password=password,
+        )
+
+        return Response(
+            {"message": "User created successfully"}, status=status.HTTP_201_CREATED
+        )
+        
+        
+class ResetPasswordView(APIView):
+    
+    def get(self, request, email):
+        print(f"Received request to reset password for email: {email}")  # Debugging line
+        user = get_object_or_404(CustomUser, email=email)
+        serializer = UserListSerializer(user)
+        return Response(serializer.data)
+
+    def put(self, request, email):
+        user = get_object_or_404(CustomUser, email=email)
+        serializer = UserListSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

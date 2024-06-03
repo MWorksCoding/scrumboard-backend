@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
     color = models.CharField(max_length=20)
-    email = models.CharField(max_length=30)
+    email = models.CharField(max_length=30, unique=True)
     phone = models.CharField(max_length=30)
     
 class Contact(models.Model):

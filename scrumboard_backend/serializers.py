@@ -25,7 +25,6 @@ class UserListSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), many=True)
-    # category = CategorySerializer()
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
 
 
