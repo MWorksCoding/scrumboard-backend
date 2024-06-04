@@ -18,6 +18,14 @@ from django.shortcuts import get_object_or_404
     
 
 class LoginView(ObtainAuthToken):
+    """
+    Handle user login by validating credentials and returning a token.
+    
+    Methods
+    -------
+    post(request, *args, **kwargs)
+        Validate user credentials and return an authentication token.
+    """
     def post(self, request, *args, **kwargs):
         # serializer takes the incoming data (user / password)
         serializer = self.serializer_class(data=request.data,
@@ -39,7 +47,14 @@ class LoginView(ObtainAuthToken):
         
 
 class LogoutView(APIView):
+    """
+    Handle user logout by deleting the user's token.
     
+    Methods
+    -------
+    post(request)
+        Delete the user's authentication token.
+    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
@@ -51,11 +66,23 @@ class LogoutView(APIView):
     
     
 class TaskView(APIView):    
-    #Authentication with token
-    # permission only when authentication is successful
+    """
+    Handle CRUD operations for tasks.
+    
+    Methods
+    -------
+    get(request, pk=None, format=None)
+        Retrieve all tasks or a specific task by ID.
+    post(request, format=None)
+        Create a new task.
+    put(request, pk, format=None)
+        Update an existing task by ID.
+    delete(request, pk, format=None)
+        Delete a task by ID.
+    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-
+    
     def get(self, request, pk=None, format=None):
         task = Task.objects.all()
         serializer = TaskSerializer(task, many=True)
@@ -102,6 +129,14 @@ class TaskView(APIView):
         
         
 class CategoriesView(APIView):
+    """
+    Handle retrieval of all categories.
+    
+    Methods
+    -------
+    get(request)
+        Retrieve all categories.
+    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -113,6 +148,14 @@ class CategoriesView(APIView):
     
     
 class UserListView(APIView):
+    """
+    Handle retrieval of all users.
+    
+    Methods
+    -------
+    get(request)
+        Retrieve all users.
+    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -123,6 +166,20 @@ class UserListView(APIView):
     
 
 class ContactView(APIView):
+    """
+    Handle CRUD operations for contacts.
+    
+    Methods
+    -------
+    get(request, pk=None, format=None)
+        Retrieve all contacts or a specific contact by ID.
+    post(request, format=None)
+        Create a new contact.
+    put(request, pk, format=None)
+        Update an existing contact by ID.
+    delete(request, pk, format=None)
+        Delete a contact by ID.
+    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -170,6 +227,16 @@ class ContactView(APIView):
     
     
 class UserDetailView(APIView):
+    """
+    Handle retrieval and update of a specific user by username.
+    
+    Methods
+    -------
+    get(request, username)
+        Retrieve a user by username.
+    put(request, username)
+        Update a user by username.
+    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
@@ -194,7 +261,14 @@ class UserDetailView(APIView):
         
         
 class CreateUserView(APIView):
-
+    """
+    Handle user creation.
+    
+    Methods
+    -------
+    post(request)
+        Create a new user.
+    """
     def post(self, request):
         first_name = request.data.get("first_name")
         last_name = request.data.get("last_name")
@@ -232,7 +306,16 @@ class CreateUserView(APIView):
         
         
 class ResetPasswordView(APIView):
+    """
+    Handle password reset for a user by email.
     
+    Methods
+    -------
+    get(request, email)
+        Retrieve user data by email.
+    put(request, email)
+        Update user password by email.
+    """
     def get(self, request, email):
         print(f"Received request to reset password for email: {email}")  # Debugging line
         user = get_object_or_404(CustomUser, email=email)
@@ -241,11 +324,6 @@ class ResetPasswordView(APIView):
 
     def put(self, request, email):
         user = get_object_or_404(CustomUser, email=email)
-        # serializer = UserListSerializer(user, data=request.data, partial=True)
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return Response(serializer.data)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         new_password = request.data.get('password')
         if new_password:
             user.set_password(new_password)
