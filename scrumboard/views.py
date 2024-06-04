@@ -241,8 +241,14 @@ class ResetPasswordView(APIView):
 
     def put(self, request, email):
         user = get_object_or_404(CustomUser, email=email)
-        serializer = UserListSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # serializer = UserListSerializer(user, data=request.data, partial=True)
+        # if serializer.is_valid():
+        #     serializer.save()
+        #     return Response(serializer.data)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        new_password = request.data.get('password')
+        if new_password:
+            user.set_password(new_password)
+            user.save()
+            return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Password not provided'}, status=status.HTTP_400_BAD_REQUEST)
