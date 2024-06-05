@@ -20,7 +20,6 @@ from scrumboard.views import LoginView, LogoutView, TaskView, CategoriesView, Us
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', LoginView.as_view()),
     path('login/', LoginView.as_view()),
     path('tasks/', TaskView.as_view()),
     path('tasks/<int:pk>/', TaskView.as_view()),
